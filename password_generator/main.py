@@ -3,6 +3,7 @@ from tkinter import *
 from tkinter import messagebox
 import random
 import pyperclip
+import json
 
 
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
@@ -40,6 +41,12 @@ def save():
     website = website_input.get()
     email = email_input.get()
     password = password_input.get()
+    new_data = {
+        website: {
+            "email": email,
+            "password": password,
+        }
+    }
 
     if len(website) < 1 or len(email) < 1 or len(password) < 1:
         messagebox.showinfo(title="Error", message="Please enter the correct information")
@@ -47,12 +54,48 @@ def save():
         is_ok = messagebox.askokcancel(title=website, message=f"This is what you entered: \nWebsite: {website} \nEmail: {email} \nPassword: {password} \n Click OK to Save")
 
     if is_ok:
-        with open("password_data.txt", "a") as data_file:
-            data_file.write(f"{website} | {email} | {password}\n")
+        try:
+            with open("data.json", "r") as data_file:
+                # reading old data
+                data = json.load(data_file)
+        except FileNotFoundError:
+            with open("data.json", "w") as data_file:
+                json.dump(new_data, data_file, indent=4)
+        else:
+            # updating old data with new data
+            data.update(new_data)
+
+            with open("data.json", "w") as data_file:
+                # saving updated data
+                json.dump(data, data_file, indent=4)
+        finally:
             website_input.delete(0, END)
             email_input.delete(0, END)
             password_input.delete(0, END)
 
+         # code for writing to text file
+         # with open("password_data.txt", "a") as data_file:
+         #   data_file.write(f"{website} | {email} | {password}\n")
+          #  website_input.delete(0, END)
+           # email_input.delete(0, END)
+           # password_input.delete(0, END)
+
+
+def search_sites():
+    # capture the input for website
+    website = website_input.get()
+    try:
+        with open("data.json", "r") as data_file:
+            data = json.load(data_file)
+    except FileNotFoundError:
+        messagebox.showinfo(title="Error", message="No file found!")
+    else:
+        if website in data:
+            email = data[website]["email"]
+            password = data[website]["password"]
+            messagebox.showinfo(title=website, message=f"Email: {email}\n Password: {password}")
+        else:
+            messagebox.showinfo(title="Error", message=f"No details exist for {website}!")
 
 # ---------------------------- UI SETUP ------------------------------- #
 window = Tk()
@@ -78,8 +121,8 @@ password_label = Label(text="Password:", bg="white")
 password_label.grid(row=3, column=0)
 password_label.focus()
 
-website_input = Entry(width=35)
-website_input.grid(column=1, row=1, columnspan=2)
+website_input = Entry(width=21)
+website_input.grid(column=1, row=1)
 
 email_input = Entry(width=35)
 email_input.grid(column=1, row=2, columnspan=2)
@@ -92,6 +135,9 @@ generate_button.grid(column=2, row=3)
 
 add_button = Button(text='Add', width=36, command=save)
 add_button.grid(row=4, column=1, columnspan=2)
+
+search_button = Button(text="Search", width=13, command=search_sites)
+search_button.grid(row=1, column=2)
 
 # pyperclip allows you to clip and paste input data, see doc for details: pypi.org/project/pyperclip
 # pip install pyperclip
